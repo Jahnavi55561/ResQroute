@@ -1,0 +1,10 @@
+
+venv/
+__pycache__/
+*.pyc
+*.db
+.env
+ResQRoute_Backup/
+templates/ResQRoute_Backup/
+templates/static/
+templates/__pycache__/

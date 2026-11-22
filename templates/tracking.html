@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResQRoute - Live Ambulance Tracking</title>
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #081426;
+            color: white;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        .header, .card, .status {
+            background: #10233e;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
+        h1, .card h3 { color: #38bdf8; }
+
+        .details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .card p { overflow-wrap: anywhere; }
+
+        #map {
+            height: 480px;
+            width: 100%;
+            border-radius: 14px;
+            border: 2px solid #1e3a5f;
+        }
+
+        .status {
+            color: #4ade80;
+            margin-top: 18px;
+        }
+
+        .note {
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 18px;
+            color: #38bdf8;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <a class="back" href="/">← Back to Dashboard</a>
+
+    <div class="header">
+        <h1>🚑 ResQRoute Live Tracking</h1>
+        <p>Monitor the assigned demo ambulance location.</p>
+        <strong>Emergency ID: {{ emergency["emergency_id"] }}</strong>
+    </div>
+
+    <div class="details">
+        <div class="card">
+            <h3>👤 Patient</h3>
+            <p>{{ emergency["patient_name"] }}</p>
+        </div>
+
+        <div class="card">
+            <h3>🚑 Ambulance</h3>
+            <p>{{ emergency["assigned_vehicle"] or "Not available" }}</p>
+        </div>
+
+        <div class="card">
+            <h3>👨‍✈️ Driver</h3>
+            <p>{{ emergency["assigned_driver"] or "Not available" }}</p>
+        </div>
+
+        <div class="card">
+            <h3>📋 Emergency Status</h3>
+            <p id="emergencyStatus">{{ emergency["status"] }}</p>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="status" id="trackingStatus">
+        Connecting to tracking service...
+    </div>
+
+    <p class="note">
+        Demo tracking only. The dashed line is a straight-line connection,
+        not a verified road route. GPS updates require driver location sharing.
+    </p>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const emergencyId = {{ emergency["emergency_id"] | tojson }};
+
+const map = L.map("map").setView([17.088, 82.07135], 18);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+}).addTo(map);
+
+const patientIcon = L.divIcon({
+    html: '<div style="font-size:30px;">📍</div>',
+    className: "",
+    iconSize: [35, 35],
+    iconAnchor: [17, 17]
+});
+
+const ambulanceIcon = L.divIcon({
+    html: '<div style="font-size:30px;">🚑</div>',
+    className: "",
+    iconSize: [35, 35],
+    iconAnchor: [17, 17]
+});
+
+let patientMarker = null;
+let ambulanceMarker = null;
+let routeLine = null;
+
+function validCoordinates(lat, lon) {
+    if (lat === null || lat === undefined || lat === "" ||
+        lon === null || lon === undefined || lon === "") {
+        return false;
+    }
+
+    const latitude = Number(lat);
+    const longitude = Number(lon);
+
+    return Number.isFinite(latitude) &&
+           Number.isFinite(longitude) &&
+           latitude >= -90 && latitude <= 90 &&
+           longitude >= -180 && longitude <= 180;
+}
+
+async function refreshTracking() {
+    const statusBox = document.getElementById("trackingStatus");
+
+    try {
+        const response = await fetch(
+            "/tracking-data/" + encodeURIComponent(emergencyId) +
+            "?t=" + Date.now(),
+            { cache: "no-store" }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Tracking data unavailable");
+        }
+
+        document.getElementById("emergencyStatus").textContent =
+            data.status;
+
+        const points = [];
+        let patientAvailable = false;
+        let ambulanceAvailable = false;
+
+        // PATIENT LOCATION
+        const patientLat = data.patient?.latitude;
+        const patientLon = data.patient?.longitude;
+
+        if (validCoordinates(patientLat, patientLon)) {
+            const position = [
+                Number(patientLat),
+                Number(patientLon)
+            ];
+
+            patientAvailable = true;
+
+            if (!patientMarker) {
+                patientMarker = L.marker(position, {
+                    icon: patientIcon
+                }).addTo(map).bindPopup("📍 Patient Location");
+            } else {
+                patientMarker.setLatLng(position);
+            }
+
+            points.push(position);
+        }
+
+        // AMBULANCE LOCATION
+        const ambulanceLat = data.ambulance?.latitude;
+        const ambulanceLon = data.ambulance?.longitude;
+
+        if (validCoordinates(ambulanceLat, ambulanceLon)) {
+            const position = [
+                Number(ambulanceLat),
+                Number(ambulanceLon)
+            ];
+
+            ambulanceAvailable = true;
+
+            if (!ambulanceMarker) {
+                ambulanceMarker = L.marker(position, {
+                    icon: ambulanceIcon
+                }).addTo(map).bindPopup("🚑 Ambulance Location");
+            } else {
+                ambulanceMarker.setLatLng(position);
+            }
+
+            points.push(position);
+        }
+
+        // REMOVE OLD LINE
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+
+        // BOTH LOCATIONS AVAILABLE
+        if (patientAvailable && ambulanceAvailable) {
+
+            routeLine = L.polyline(points, {
+                color: "#22c55e",
+                weight: 5,
+                dashArray: "10, 10"
+            }).addTo(map);
+
+            const bounds = L.latLngBounds(points);
+            map.fitBounds(bounds, {
+                padding: [80, 80],
+                maxZoom: 19
+            });
+
+            statusBox.textContent =
+                "🟢 Both GPS locations received! " +
+                "Patient and ambulance locations are being updated. " +
+                "Last update: " +
+                (data.ambulance.gps_updated_at || "Not available");
+
+        } else if (patientAvailable) {
+
+            map.setView(points[0], 18);
+
+            statusBox.textContent =
+                "🟡 Patient GPS available. Waiting for ambulance GPS.";
+
+        } else if (ambulanceAvailable) {
+
+            map.setView(points[0], 18);
+
+            statusBox.textContent =
+                "🟡 Ambulance GPS available. Waiting for patient GPS.";
+
+        } else {
+
+            statusBox.textContent =
+                "🔴 Patient and ambulance GPS coordinates are unavailable.";
+        }
+
+    } catch (error) {
+        statusBox.textContent =
+            "Tracking error: " + error.message;
+    }
+}
+
+refreshTracking();
+setInterval(refreshTracking, 5000);
+
+</script>
+</body>
+</html>

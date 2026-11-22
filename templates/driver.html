@@ -1,0 +1,563 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResQRoute | Driver Portal</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #0b1220;
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #111c30;
+            padding: 20px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #26364e;
+        }
+
+        header h2 { color: #38bdf8; }
+
+        header a {
+            color: #fca5a5;
+            text-decoration: none;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 45px auto;
+        }
+
+        .card {
+            background: #142238;
+            border: 1px solid #293b55;
+            border-radius: 14px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+
+        h1, h2 { margin-bottom: 18px; }
+
+        p {
+            color: #b9c7d9;
+            line-height: 1.7;
+        }
+
+        label {
+            display: block;
+            margin: 18px 0 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            border-radius: 8px;
+            border: 1px solid #40536e;
+            background: #0b1729;
+            color: white;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .login-btn { background: #0284c7; color: white; width: 100%; }
+        .accept-btn { background: #16a34a; color: white; margin-right: 10px; }
+        .reject-btn { background: #dc2626; color: white; }
+        .gps-start { background: #16a34a; color: white; margin-right: 8px; }
+        .gps-stop { background: #dc2626; color: white; }
+
+        .workflow-btn {
+            background: #0284c7;
+            color: white;
+            width: 100%;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #164e63;
+            color: #67e8f9;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .flash {
+            background: #164e63;
+            border: 1px solid #0891b2;
+            padding: 13px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .emergency {
+            background: #0d192c;
+            border: 1px solid #40536e;
+            border-radius: 12px;
+            padding: 22px;
+            margin-top: 18px;
+        }
+
+        .emergency h3 {
+            color: #fca5a5;
+            margin-bottom: 12px;
+        }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            color: #94a3b8;
+            border: 1px dashed #40536e;
+            border-radius: 10px;
+        }
+
+        .demo-note {
+            color: #fbbf24;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+
+        #gpsMessage { margin-top: 15px; overflow-wrap: anywhere; }
+
+        .gps-info {
+            background: #0b1729;
+            border: 1px solid #293b55;
+            border-radius: 9px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .workflow {
+            margin-top: 18px;
+            padding: 16px;
+            background: #142238;
+            border: 1px solid #293b55;
+            border-radius: 10px;
+        }
+
+        .workflow-step {
+            padding: 10px;
+            margin: 8px 0;
+            background: #0b1729;
+            border-radius: 7px;
+            color: #cbd5e1;
+        }
+
+        .completed {
+            color: #4ade80;
+            border-left: 3px solid #16a34a;
+        }
+
+        @media(max-width: 600px) {
+            header { padding: 18px; }
+            .container { width: 92%; }
+            .card { padding: 20px; }
+            .gps-start, .gps-stop { width: 100%; margin-right: 0; }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>✚ ResQRoute</h2>
+
+    {% if ambulance %}
+        <a href="{{ url_for('driver_logout') }}">Logout</a>
+    {% else %}
+        <a href="{{ url_for('home') }}">Home</a>
+    {% endif %}
+</header>
+
+<div class="container">
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if ambulance %}
+
+        <div class="card">
+            <h1>🚑 Driver Dashboard</h1>
+            <p>Welcome, {{ ambulance.driver_name }}!</p>
+
+            <span class="status">{{ ambulance.status }}</span>
+
+            <p><b>Vehicle:</b> {{ ambulance.vehicle_number }}</p>
+            <p><b>Driver:</b> {{ ambulance.driver_name }}</p>
+            <p><b>Phone:</b> {{ ambulance.phone }}</p>
+            <p><b>Ambulance Type:</b> {{ ambulance.ambulance_type }}</p>
+            <p><b>Location:</b> {{ ambulance.location }}</p>
+        </div>
+
+        <!-- LIVE GPS SHARING -->
+
+        <div class="card">
+            <h2>📍 Live GPS Sharing</h2>
+
+            <p>
+                Share your current ambulance location with ResQRoute.
+                Location updates while GPS sharing is active.
+            </p>
+
+            <div class="gps-info">
+                <p id="gpsMessage">GPS sharing is stopped.</p>
+                <p id="gpsCoordinates">Coordinates: Not available</p>
+                <p id="gpsLastUpdate">Last update: Not available</p>
+            </div>
+
+            <button type="button" class="gps-start"
+                    id="startGpsButton"
+                    onclick="startDriverTracking()">
+                📍 Start Sharing Live GPS
+            </button>
+
+            <button type="button" class="gps-stop"
+                    id="stopGpsButton"
+                    onclick="stopDriverTracking()" disabled>
+                Stop GPS
+            </button>
+
+            <p class="demo-note">
+                Allow browser location permission. GPS sharing works while this page remains open.
+            </p>
+        </div>
+
+        <!-- ASSIGNED EMERGENCIES -->
+
+        <div class="card">
+            <h2>📋 Assigned Emergency Requests</h2>
+
+            {% if emergencies %}
+
+                {% for emergency in emergencies %}
+
+                    <div class="emergency">
+
+                        <h3>🚨 {{ emergency.emergency_id }}</h3>
+
+                        <p><b>Patient:</b> {{ emergency.patient_name }}</p>
+                        <p><b>Phone:</b> {{ emergency.phone }}</p>
+                        <p><b>Emergency Type:</b> {{ emergency.emergency_type }}</p>
+                        <p><b>Location:</b> {{ emergency.location }}</p>
+                        <p><b>Created At:</b> {{ emergency.created_at }}</p>
+
+                        <p><b>Current Status:</b></p>
+                        <span class="status">{{ emergency.status }}</span>
+
+                        {% if emergency.status == "Ambulance Assigned - Demo" %}
+
+                            <form method="POST"
+                                  action="{{ url_for('driver_accept', emergency_id=emergency.id) }}"
+                                  style="display:inline;">
+
+                                <button class="accept-btn" type="submit">
+                                    ✓ Accept Emergency
+                                </button>
+                            </form>
+
+                            <form method="POST"
+                                  action="{{ url_for('driver_reject', emergency_id=emergency.id) }}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Are you sure you want to reject this emergency?');">
+
+                                <button class="reject-btn" type="submit">
+                                    ✕ Reject Emergency
+                                </button>
+                            </form>
+
+                        {% endif %}
+
+                        <!-- EMERGENCY WORKFLOW -->
+
+                        {% set workflow_statuses = [
+                            "Accepted - Demo",
+                            "Reached Patient - Demo",
+                            "Patient Picked Up - Demo",
+                            "Reached Hospital - Demo"
+                        ] %}
+
+                        {% if emergency.status in workflow_statuses %}
+
+                            <div class="workflow">
+
+                                <h3>🚑 Emergency Progress</h3>
+
+                                {% for step in workflow_statuses %}
+
+                                    <div class="workflow-step
+                                        {% if workflow_statuses.index(emergency.status) >= loop.index0 %}
+                                            completed
+                                        {% endif %}">
+
+                                        {% if workflow_statuses.index(emergency.status) >= loop.index0 %}
+                                            ✓
+                                        {% else %}
+                                            ○
+                                        {% endif %}
+
+                                        {{ step.replace(" - Demo", "") }}
+
+                                    </div>
+
+                                {% endfor %}
+
+                                {% if emergency.status != "Reached Hospital - Demo" %}
+
+                                    <form method="POST"
+                                          action="{{ url_for('driver_update_status', emergency_id=emergency.id) }}"
+                                          onsubmit="return confirm('Update emergency to the next stage?');">
+
+                                        {% if emergency.status == "Accepted - Demo" %}
+
+                                            <button class="workflow-btn" type="submit">
+                                                📍 Mark Reached Patient
+                                            </button>
+
+                                        {% elif emergency.status == "Reached Patient - Demo" %}
+
+                                            <button class="workflow-btn" type="submit">
+                                                ✓ Mark Patient Picked Up
+                                            </button>
+
+                                        {% elif emergency.status == "Patient Picked Up - Demo" %}
+
+                                            <button class="workflow-btn" type="submit">
+                                                🏥 Mark Reached Hospital
+                                            </button>
+
+                                        {% endif %}
+
+                                    </form>
+
+                                {% else %}
+
+                                    <span class="status">
+                                        ✓ Emergency Journey Completed
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="empty">
+                    <h3>No Emergency Assigned</h3>
+                    <p>New assigned emergency requests will appear here.</p>
+                </div>
+
+            {% endif %}
+        </div>
+
+    {% else %}
+
+        <!-- DRIVER LOGIN -->
+
+        <div class="card">
+            <h1>🚑 Ambulance Driver Login</h1>
+
+            <p>
+                Login using your registered vehicle number
+                and driver mobile number.
+            </p>
+
+            <form method="POST" action="{{ url_for('driver_login') }}">
+
+                <label>Vehicle Number</label>
+
+                <input type="text"
+                       name="vehicle_number"
+                       placeholder="Example: AP05AB1234"
+                       required>
+
+                <label>Registered Mobile Number</label>
+
+                <input type="tel"
+                       name="phone"
+                       placeholder="Enter registered mobile number"
+                       required>
+
+                <button class="login-btn" type="submit">
+                    Login to Driver Portal
+                </button>
+
+            </form>
+
+            <p class="demo-note">
+                Demonstration login only. Not production-grade authentication.
+            </p>
+        </div>
+
+    {% endif %}
+
+    <p class="demo-note">
+        ⚠️ Demonstration only. This portal does not communicate with real ambulance services.
+        For actual emergencies in India, call 112.
+    </p>
+
+</div>
+
+
+<!-- LIVE GPS JAVASCRIPT -->
+
+{% if ambulance %}
+
+<script>
+    let driverWatchId = null;
+    let gpsUpdateInProgress = false;
+
+    const gpsMessage = document.getElementById("gpsMessage");
+    const gpsCoordinates = document.getElementById("gpsCoordinates");
+    const gpsLastUpdate = document.getElementById("gpsLastUpdate");
+
+    const startButton = document.getElementById("startGpsButton");
+    const stopButton = document.getElementById("stopGpsButton");
+
+    async function sendLocationToServer(latitude, longitude) {
+
+        if (gpsUpdateInProgress) return;
+
+        gpsUpdateInProgress = true;
+
+        try {
+            const response = await fetch("/driver-update-location", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "GPS update failed.");
+            }
+
+            gpsMessage.textContent = "🟢 Live GPS sharing is active.";
+
+            gpsCoordinates.textContent =
+                "Coordinates: " +
+                latitude.toFixed(6) + ", " +
+                longitude.toFixed(6);
+
+            gpsLastUpdate.textContent =
+                "Last update: " + new Date().toLocaleTimeString();
+
+        } catch (error) {
+            gpsMessage.textContent = "GPS update failed: " + error.message;
+
+        } finally {
+            gpsUpdateInProgress = false;
+        }
+    }
+
+    function startDriverTracking() {
+
+        if (!navigator.geolocation) {
+            gpsMessage.textContent = "GPS is not supported by this browser.";
+            return;
+        }
+
+        if (driverWatchId !== null) return;
+
+        gpsMessage.textContent = "Requesting GPS permission...";
+
+        startButton.disabled = true;
+        stopButton.disabled = false;
+
+        driverWatchId = navigator.geolocation.watchPosition(
+
+            function(position) {
+                sendLocationToServer(
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
+            },
+
+            function(error) {
+                let message = "Unable to get GPS location.";
+
+                if (error.code === error.PERMISSION_DENIED) {
+                    message = "Location permission denied. Allow GPS in browser settings.";
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    message = "GPS location is unavailable.";
+                } else if (error.code === error.TIMEOUT) {
+                    message = "GPS request timed out.";
+                }
+
+                gpsMessage.textContent = "🔴 " + message;
+                stopDriverTracking();
+            },
+
+            {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 20000
+            }
+        );
+    }
+
+    function stopDriverTracking() {
+
+        if (driverWatchId !== null) {
+            navigator.geolocation.clearWatch(driverWatchId);
+            driverWatchId = null;
+        }
+
+        startButton.disabled = false;
+        stopButton.disabled = true;
+
+        gpsMessage.textContent = "GPS sharing stopped.";
+    }
+
+    window.addEventListener("beforeunload", function() {
+        if (driverWatchId !== null) {
+            navigator.geolocation.clearWatch(driverWatchId);
+        }
+    });
+</script>
+
+{% endif %}
+
+</body>
+</html>

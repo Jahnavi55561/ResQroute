@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResQRoute | Select Portal</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #081426, #142d4d);
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 22px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #34445b;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+            color: #ff5252;
+        }
+
+        .tagline {
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+
+        main {
+            width: 100%;
+            max-width: 1100px;
+            margin: auto;
+            padding: 75px 25px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin-bottom: 15px;
+        }
+
+        .intro {
+            color: #cbd5e1;
+            line-height: 1.7;
+            margin-bottom: 45px;
+        }
+
+        .portals {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .portal {
+            background: white;
+            color: #172033;
+            padding: 35px 22px;
+            border-radius: 16px;
+            text-align: center;
+            transition: 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .portal:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        .symbol {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-bottom: 12px;
+        }
+
+        .portal p {
+            color: #64748b;
+            line-height: 1.6;
+            min-height: 75px;
+        }
+
+        .portal a {
+            display: block;
+            margin-top: 22px;
+            padding: 13px;
+            background: #1769aa;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .portal a:hover {
+            opacity: 0.85;
+        }
+
+        .patient a {
+            background: #dc3545;
+        }
+
+        .driver a {
+            background: #1769aa;
+        }
+
+        .admin a {
+            background: #142d4d;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #aab7c8;
+            font-size: 13px;
+        }
+
+        @media(max-width: 750px) {
+            .portals {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            header {
+                padding: 18px 5%;
+            }
+
+            .tagline {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">✚ ResQRoute</div>
+    <div class="tagline">Smart Emergency Response System</div>
+</header>
+
+<main>
+
+    <h1>Welcome to ResQRoute</h1>
+
+    <p class="intro">
+        Connecting patients, ambulance drivers and administrators
+        through one emergency response platform.
+        <br>
+        Select your portal to continue.
+    </p>
+
+    <div class="portals">
+
+        <!-- PATIENT PORTAL -->
+        <div class="portal patient">
+            <div class="symbol">🚨</div>
+
+            <h2>Patient Portal</h2>
+
+            <p>
+                Request emergency assistance, share your GPS
+                location and track your assigned ambulance.
+            </p>
+
+            <a href="/patient">
+                Continue as Patient
+            </a>
+        </div>
+
+        <!-- DRIVER PORTAL -->
+        <div class="portal driver">
+            <div class="symbol">🚑</div>
+
+            <h2>Driver Portal</h2>
+
+            <p>
+                Login to view assigned emergencies, accept or reject
+                requests, share live GPS and update journey status.
+            </p>
+
+            <a href="/driver-login">
+                Continue as Driver
+            </a>
+        </div>
+
+        <!-- ADMIN PORTAL -->
+        <div class="portal admin">
+            <div class="symbol">🛡️</div>
+
+            <h2>Admin Portal</h2>
+
+            <p>
+                Secure administrator login to manage ambulances,
+                monitor SOS requests and coordinate assignments.
+            </p>
+
+            <a href="/admin-login">
+                Continue as Admin
+            </a>
+        </div>
+
+    </div>
+
+</main>
+
+<footer>
+    ResQRoute Prototype | For demonstration purposes only.
+    <br><br>
+    In India, call 112 for real emergencies.
+</footer>
+
+</body>
+</html>

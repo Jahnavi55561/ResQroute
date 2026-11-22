@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResQRoute | Admin Login</title>
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #081426, #183b60);
+            padding: 20px;
+        }
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+            padding: 38px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 15px 45px #0005;
+        }
+        h1 { color: #142d4d; text-align: center; margin-bottom: 8px; }
+        .subtitle { text-align: center; color: #64748b; margin-bottom: 28px; }
+        label { display: block; margin: 17px 0 7px; font-weight: bold; color: #243247; }
+        input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            border: 0;
+            border-radius: 8px;
+            background: #142d4d;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 7px;
+            background: #fff1f0;
+            color: #b42318;
+        }
+        .back { display: block; text-align: center; margin-top: 20px; color: #1769aa; text-decoration: none; }
+        .note { text-align: center; color: #64748b; font-size: 12px; margin-top: 22px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>🛡️ Admin Login</h1>
+        <p class="subtitle">ResQRoute Management Portal</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('admin_login') }}">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" required autocomplete="username">
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password">
+
+            <button type="submit">Login to Admin Dashboard</button>
+        </form>
+
+        <a class="back" href="{{ url_for('portal_home') }}">← Back to portals</a>
+        <p class="note">ResQRoute demonstration prototype</p>
+    </div>
+</body>
+</html>

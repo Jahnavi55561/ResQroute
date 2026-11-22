@@ -1,0 +1,1508 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ResQRoute | Smart Emergency Response</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        .location-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .gps-button {
+            background: #176b52;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .gps-button:hover {
+            background: #10533f;
+        }
+
+        .gps-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #location-status,
+        #ambulance-location-status {
+            display: block;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #176b52;
+        }
+
+        #emergency-map {
+            width: 100%;
+            height: 320px;
+            margin-top: 18px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            z-index: 1;
+        }
+
+        .map-instruction {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        .safety-note {
+            margin-top: 20px;
+        }
+
+        .ambulance-section {
+            padding: 70px 8%;
+        }
+
+        .ambulance-section .sos-container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .ambulance-table {
+            margin-top: 35px;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        .ambulance-action-form {
+            margin: 0;
+        }
+
+        .alert {
+            margin: 15px 0;
+        }
+
+        .matching-result {
+            margin-top: 8px;
+            min-width: 190px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #176b52;
+            font-weight: 600;
+        }
+
+        .assignment-details {
+            margin-top: 8px;
+            padding: 12px;
+            border: 1px solid #176b52;
+            border-radius: 8px;
+            background: rgba(23, 107, 82, 0.07);
+            color: inherit;
+            min-width: 190px;
+        }
+
+        .assignment-details p {
+            margin: 4px 0;
+            font-size: 13px;
+        }
+
+        .assign-button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #176b52;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .assign-button:hover {
+            background: #10533f;
+        }
+
+        .assign-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .assigned-label {
+            display: inline-block;
+            padding: 7px 10px;
+            border-radius: 6px;
+            background: #176b52;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .assigned-vehicle {
+            color: #176b52;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-card {
+            min-width: 150px;
+        }
+
+        @media(max-width: 768px) {
+            .ambulance-section {
+                padding: 45px 5%;
+            }
+
+            .navbar nav {
+                flex-wrap: wrap;
+            }
+
+            .assignment-details {
+                min-width: 160px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVIGATION -->
+<header class="navbar">
+
+    <div class="logo">
+        <span class="logo-icon">✚</span>
+        ResQRoute
+    </div>
+
+    <nav>
+        <a href="#home">Home</a>
+        <a href="#features">Features</a>
+        <a href="#sos">Emergency SOS</a>
+        <a href="#ambulances">Ambulances</a>
+        <a href="#dashboard">Dashboard</a>
+    </nav>
+
+    <div class="live-status">
+        <span class="live-dot"></span>
+        Prototype System
+    </div>
+
+</header>
+
+
+<!-- HERO SECTION -->
+<section class="hero" id="home">
+
+    <div class="hero-content">
+
+        <p class="hero-label">
+            INTELLIGENT EMERGENCY RESPONSE PLATFORM
+        </p>
+
+        <h1>
+            Every Second<br>
+            Can Save a <span>Life.</span>
+        </h1>
+
+        <p class="hero-description">
+            Connecting patients, ambulances and hospitals
+            through intelligent emergency coordination.
+            Faster response. Smarter decisions. Better coordination.
+        </p>
+
+        <div class="hero-buttons">
+
+            <a href="#sos" class="primary-button">
+                🚨 Request Emergency Help
+            </a>
+
+            <a href="#features" class="secondary-button">
+                Explore Platform
+            </a>
+
+        </div>
+
+        <div class="hero-points">
+
+            <div>
+                <strong>01</strong>
+                <span>Emergency SOS</span>
+            </div>
+
+            <div>
+                <strong>02</strong>
+                <span>Ambulance Matching</span>
+            </div>
+
+            <div>
+                <strong>03</strong>
+                <span>Hospital Coordination</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="hero-visual">
+
+        <div class="emergency-circle">
+            <div class="ambulance-icon">🚑</div>
+            <h3>Emergency Support</h3>
+            <p>One platform. Connected response.</p>
+        </div>
+
+        <div class="floating-card card-one">
+            📍 Location Support
+        </div>
+
+        <div class="floating-card card-two">
+            🏥 Hospital Matching
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- FEATURES SECTION -->
+<section class="features-section" id="features">
+
+    <div class="section-heading">
+
+        <p class="section-label">OUR CAPABILITIES</p>
+
+        <h2>One Platform. Complete Coordination.</h2>
+
+        <p>
+            Bringing every important emergency response component
+            together in one connected system.
+        </p>
+
+    </div>
+
+
+    <div class="features-grid">
+
+        <div class="feature-card">
+            <div class="feature-icon">🚨</div>
+            <h3>Emergency SOS</h3>
+            <p>Submit emergency details and share the patient's location.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚑</div>
+            <h3>Ambulance Matching</h3>
+            <p>Find the nearest available demo ambulance using GPS coordinates.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗺️</div>
+            <h3>Smart Route Support</h3>
+            <p>Future traffic-aware route and alternative path suggestions.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏥</div>
+            <h3>Hospital Matching</h3>
+            <p>Identify hospitals based on emergency requirements.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Admin Dashboard</h3>
+            <p>Monitor emergency requests and ambulance records.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>AI Intelligence</h3>
+            <p>Future analytics for emergency demand prediction.</p>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- FLASH MESSAGES -->
+<section id="sos">
+
+    <div class="sos-container">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+    </div>
+
+</section>
+
+
+<!-- EMERGENCY SOS SECTION -->
+<section class="sos-section">
+
+    <div class="sos-container">
+
+        <div class="sos-heading">
+
+            <p class="section-label">PATIENT PORTAL</p>
+
+            <h2>Emergency SOS Request</h2>
+
+            <p>
+                Enter patient details and share your current
+                or manually entered location.
+            </p>
+
+        </div>
+
+
+        <form action="/sos"
+              method="POST"
+              class="sos-form"
+              id="sos-form">
+
+            <div class="form-group">
+
+                <label for="patient_name">Patient Name</label>
+
+                <input
+                    type="text"
+                    id="patient_name"
+                    name="patient_name"
+                    placeholder="Enter patient name"
+                    required>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="phone">Mobile Number</label>
+
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="Enter mobile number"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                    required>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="emergency_type">Emergency Type</label>
+
+                <select id="emergency_type"
+                        name="emergency_type"
+                        required>
+
+                    <option value="">Select emergency type</option>
+                    <option value="Road Accident">Road Accident</option>
+                    <option value="Cardiac Emergency">Cardiac Emergency</option>
+                    <option value="Medical Emergency">Medical Emergency</option>
+                    <option value="Pregnancy Emergency">Pregnancy Emergency</option>
+                    <option value="Fire Accident">Fire Accident</option>
+                    <option value="Other">Other</option>
+
+                </select>
+
+            </div>
+
+
+            <!-- PATIENT LOCATION -->
+            <div class="form-group">
+
+                <label for="location">Emergency Location</label>
+
+                <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    placeholder="Enter area, street or landmark"
+                    required>
+
+
+                <div class="location-tools">
+
+                    <button
+                        type="button"
+                        class="gps-button"
+                        id="gps-button">
+
+                        📍 Use My Current Location
+
+                    </button>
+
+                </div>
+
+
+                <span id="location-status">
+                    You can use GPS or enter your location manually.
+                </span>
+
+
+                <input
+                    type="hidden"
+                    id="latitude"
+                    name="latitude">
+
+                <input
+                    type="hidden"
+                    id="longitude"
+                    name="longitude">
+
+
+                <div id="emergency-map"></div>
+
+                <p class="map-instruction">
+                    You can also click on the map to select your location.
+                </p>
+
+            </div>
+
+
+            <button type="submit" class="sos-button">
+                🚨 SUBMIT EMERGENCY SOS
+            </button>
+
+        </form>
+
+
+        <p class="safety-note">
+            ⚠️ Demonstration prototype only. This request does not
+            contact real ambulance services or emergency authorities.
+            For actual emergencies in India, call 112.
+        </p>
+
+    </div>
+
+</section>
+
+
+<!-- AMBULANCE REGISTRATION SECTION -->
+<section class="ambulance-section" id="ambulances">
+
+    <div class="sos-container">
+
+        <div class="sos-heading">
+
+            <p class="section-label">AMBULANCE PORTAL</p>
+
+            <h2>Ambulance Registration</h2>
+
+            <p>
+                Register demo ambulances and manage their availability.
+            </p>
+
+        </div>
+
+
+        <!-- AMBULANCE REGISTRATION FORM -->
+        <form action="/register-ambulance"
+              method="POST"
+              class="sos-form"
+              id="ambulance-form">
+
+
+            <div class="form-group">
+
+                <label for="vehicle_number">Vehicle Number</label>
+
+                <input
+                    type="text"
+                    id="vehicle_number"
+                    name="vehicle_number"
+                    placeholder="Example: AP05AB1234"
+                    required>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="driver_name">Driver Name</label>
+
+                <input
+                    type="text"
+                    id="driver_name"
+                    name="driver_name"
+                    placeholder="Enter driver name"
+                    required>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="ambulance_phone">Driver Mobile Number</label>
+
+                <input
+                    type="tel"
+                    id="ambulance_phone"
+                    name="ambulance_phone"
+                    placeholder="Enter 10 digit number"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                    required>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="ambulance_type">Ambulance Type</label>
+
+                <select
+                    id="ambulance_type"
+                    name="ambulance_type"
+                    required>
+
+                    <option value="">Select ambulance type</option>
+
+                    <option value="Basic Life Support">
+                        Basic Life Support
+                    </option>
+
+                    <option value="Advanced Life Support">
+                        Advanced Life Support
+                    </option>
+
+                    <option value="Cardiac Ambulance">
+                        Cardiac Ambulance
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- AMBULANCE LOCATION -->
+            <div class="form-group">
+
+                <label for="ambulance_location">Current Location</label>
+
+                <input
+                    type="text"
+                    id="ambulance_location"
+                    name="ambulance_location"
+                    placeholder="Enter ambulance location"
+                    required>
+
+                <div class="location-tools">
+
+                    <button
+                        type="button"
+                        class="gps-button"
+                        id="ambulance-gps-button">
+
+                        📍 Capture Ambulance GPS
+
+                    </button>
+
+                </div>
+
+                <span id="ambulance-location-status">
+                    Capture the ambulance's current GPS location.
+                </span>
+
+                <input
+                    type="hidden"
+                    id="ambulance_latitude"
+                    name="ambulance_latitude">
+
+                <input
+                    type="hidden"
+                    id="ambulance_longitude"
+                    name="ambulance_longitude">
+
+            </div>
+
+
+            <button type="submit" class="sos-button">
+                🚑 REGISTER AMBULANCE
+            </button>
+
+        </form>
+
+
+        <!-- REGISTERED AMBULANCE TABLE -->
+        <div class="table-container ambulance-table">
+
+            <div class="table-heading">
+
+                <h3>Registered Ambulances</h3>
+
+                <span>Demo Records</span>
+
+            </div>
+
+
+            <div class="table-scroll">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Vehicle Number</th>
+                            <th>Driver</th>
+                            <th>Phone</th>
+                            <th>Ambulance Type</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for ambulance in ambulances %}
+
+                        <tr>
+
+                            <td>{{ ambulance.vehicle_number }}</td>
+
+                            <td>{{ ambulance.driver_name }}</td>
+
+                            <td>{{ ambulance.phone }}</td>
+
+                            <td>{{ ambulance.ambulance_type }}</td>
+
+                            <td>
+                                {{ ambulance.location }}
+
+                                {% if ambulance.latitude is not none
+                                      and ambulance.longitude is not none %}
+                                    <br>
+                                    <small>GPS: {{ "%.5f"|format(ambulance.latitude) }},
+                                    {{ "%.5f"|format(ambulance.longitude) }}</small>
+                                {% else %}
+                                    <br>
+                                    <small>GPS not registered</small>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <span class="status-badge">
+                                    {{ ambulance.status }}
+                                </span>
+                            </td>
+
+                            <td>
+
+                                <form
+                                    action="/ambulance-status/{{ ambulance.id }}"
+                                    method="POST"
+                                    class="ambulance-action-form">
+
+                                    <button
+                                        type="submit"
+                                        class="gps-button">
+
+                                        {% if ambulance.status == 'Available' %}
+                                            Set On Duty
+                                        {% else %}
+                                            Set Available
+                                        {% endif %}
+
+                                    </button>
+
+                                </form>
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="7" class="empty-message">
+                                No ambulances registered yet.
+                                Add a demo ambulance above.
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <p class="safety-note">
+            ⚠️ Demonstration records only. This module does not
+            register or dispatch real ambulances.
+        </p>
+
+    </div>
+
+</section>
+
+
+<!-- ADMIN DASHBOARD -->
+<section class="dashboard-section" id="dashboard">
+
+    <div class="section-heading">
+
+        <p class="section-label">ADMINISTRATION</p>
+
+        <h2>Emergency Monitoring Dashboard</h2>
+
+        <p>
+            Overview of emergency requests and ambulance
+            records submitted through this prototype.
+        </p>
+
+    </div>
+
+
+    <!-- DASHBOARD STATISTICS -->
+    <div class="dashboard-stats">
+
+        <div class="stat-card">
+
+            <span class="stat-icon">📋</span>
+
+            <h3>{{ emergencies|length }}</h3>
+
+            <p>Total Requests</p>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-icon">🚨</span>
+
+            <h3>
+                {{ emergencies
+                    |selectattr('status', 'equalto', 'SOS Received - Demo')
+                    |list|length }}
+            </h3>
+
+            <p>Pending SOS</p>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-icon">🚑</span>
+
+            <h3>
+                {{ emergencies
+                    |selectattr('status', 'equalto', 'Ambulance Assigned - Demo')
+                    |list|length }}
+            </h3>
+
+            <p>Assigned Emergencies</p>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-icon">🚐</span>
+
+            <h3>{{ ambulances|length }}</h3>
+
+            <p>Registered Ambulances</p>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-icon">🏥</span>
+
+            <h3>Demo</h3>
+
+            <p>Hospital Status</p>
+
+        </div>
+
+    </div>
+
+
+    <!-- EMERGENCY REQUEST TABLE -->
+    <div class="table-container">
+
+        <div class="table-heading">
+
+            <h3>Recent Emergency Requests</h3>
+
+            <span>Prototype Records</span>
+
+        </div>
+
+
+        <div class="table-scroll">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Emergency ID</th>
+                        <th>Patient Name</th>
+                        <th>Emergency Type</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Ambulance Assignment</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for item in emergencies %}
+
+                    <tr>
+
+                        <td class="emergency-id">
+                            {{ item.emergency_id }}
+                        </td>
+
+                        <td>{{ item.patient_name }}</td>
+
+                        <td>{{ item.emergency_type }}</td>
+
+                        <td>{{ item.location }}</td>
+
+                        <td>
+                            <span class="status-badge">
+                                {{ item.status }}
+                            </span>
+                        </td>
+
+                        <td>{{ item.created_at }}</td>
+
+                        <td>
+
+                            {% if item.ambulance_id and item.assigned_vehicle %}
+
+                                <div class="assignment-details">
+
+                                    <span class="assigned-label">
+                                        ✓ ASSIGNED
+                                    </span>
+
+                                    <p class="assigned-vehicle">
+                                        🚑 {{ item.assigned_vehicle }}
+                                    </p>
+
+                                    <p>
+                                        Driver: {{ item.assigned_driver }}
+                                    </p>
+
+                                    {% if item.assigned_at %}
+                                        <p>
+                                            Assigned: {{ item.assigned_at }}
+                                        </p>
+                                    {% endif %}
+
+                                </div>
+
+                            {% elif item.ambulance_id %}
+
+                                <span class="assigned-label">
+                                    ✓ ASSIGNED
+                                </span>
+
+                                <p>Ambulance record linked.</p>
+
+                            {% else %}
+
+                                <button
+                                    type="button"
+                                    class="gps-button"
+                                    onclick="findNearestAmbulance(
+                                        '{{ item.emergency_id }}',
+                                        'match-{{ item.id }}'
+                                    )">
+
+                                    Find Nearest
+
+                                </button>
+
+                                <div
+                                    id="match-{{ item.id }}"
+                                    class="matching-result">
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+
+                        <td colspan="7" class="empty-message">
+                            No emergency requests available.
+                            Submit a demo SOS to see records here.
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- FOOTER -->
+<footer class="footer">
+
+    <div class="footer-logo">
+        ✚ ResQRoute
+    </div>
+
+    <p>
+        Intelligent Emergency Response & Coordination Platform
+    </p>
+
+    <p class="footer-small">
+        National Hackathon Prototype | Demonstration System
+    </p>
+
+</footer>
+
+
+<!-- LEAFLET JAVASCRIPT -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+<script>
+
+// ======================================
+// PATIENT EMERGENCY MAP
+// ======================================
+
+const map = L.map('emergency-map').setView(
+    [20.5937, 78.9629],
+    5
+);
+
+
+L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+        attribution: '&copy; OpenStreetMap contributors'
+    }
+).addTo(map);
+
+
+let locationMarker = null;
+
+
+const latitudeInput =
+    document.getElementById('latitude');
+
+const longitudeInput =
+    document.getElementById('longitude');
+
+const locationInput =
+    document.getElementById('location');
+
+const locationStatus =
+    document.getElementById('location-status');
+
+const gpsButton =
+    document.getElementById('gps-button');
+
+
+// Set patient location
+function setLocation(latitude, longitude, source) {
+
+    latitudeInput.value = latitude;
+    longitudeInput.value = longitude;
+
+    const position = [latitude, longitude];
+
+    map.setView(position, 16);
+
+    if (locationMarker) {
+        map.removeLayer(locationMarker);
+    }
+
+    locationMarker = L.marker(position)
+        .addTo(map)
+        .bindPopup('Emergency Location')
+        .openPopup();
+
+    locationStatus.textContent =
+        source +
+        ' | Latitude: ' +
+        latitude.toFixed(6) +
+        ', Longitude: ' +
+        longitude.toFixed(6);
+
+}
+
+
+// Patient GPS button
+gpsButton.addEventListener('click', function() {
+
+    if (!navigator.geolocation) {
+
+        locationStatus.textContent =
+            'GPS is not supported by this browser.';
+
+        return;
+    }
+
+    locationStatus.textContent =
+        'Getting your current location...';
+
+    gpsButton.disabled = true;
+
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position) {
+
+            const latitude =
+                position.coords.latitude;
+
+            const longitude =
+                position.coords.longitude;
+
+
+            setLocation(
+                latitude,
+                longitude,
+                'GPS location captured'
+            );
+
+
+            if (!locationInput.value.trim()) {
+
+                locationInput.value =
+                    'GPS Coordinates: ' +
+                    latitude.toFixed(6) +
+                    ', ' +
+                    longitude.toFixed(6);
+
+            }
+
+            gpsButton.disabled = false;
+
+        },
+
+
+        function(error) {
+
+            let message =
+                'Unable to get GPS location. ';
+
+            if (error.code === 1) {
+                message +=
+                    'Please allow location permission in browser.';
+            } else if (error.code === 2) {
+                message +=
+                    'Location unavailable. Try manual location.';
+            } else if (error.code === 3) {
+                message +=
+                    'Location request timed out. Try again.';
+            }
+
+            locationStatus.textContent = message;
+
+            gpsButton.disabled = false;
+
+        },
+
+
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+
+    );
+
+});
+
+
+// Select patient location by clicking map
+map.on('click', function(event) {
+
+    const latitude = event.latlng.lat;
+    const longitude = event.latlng.lng;
+
+
+    setLocation(
+        latitude,
+        longitude,
+        'Map location selected'
+    );
+
+
+    if (!locationInput.value.trim()) {
+
+        locationInput.value =
+            'Map Coordinates: ' +
+            latitude.toFixed(6) +
+            ', ' +
+            longitude.toFixed(6);
+
+    }
+
+});
+
+
+// Add patient coordinates before SOS submission
+document.getElementById('sos-form').addEventListener(
+    'submit',
+    function() {
+
+        const latitude = latitudeInput.value;
+        const longitude = longitudeInput.value;
+
+        if (latitude && longitude) {
+
+            const coordinates =
+                ' | GPS: ' +
+                latitude +
+                ', ' +
+                longitude;
+
+            locationInput.value =
+                locationInput.value.replace(/\s*\|\s*GPS:.*$/i, '').trim() +
+                coordinates;
+
+        }
+
+    }
+);
+
+
+// ======================================
+// AMBULANCE GPS CAPTURE
+// ======================================
+
+const ambulanceGpsButton =
+    document.getElementById('ambulance-gps-button');
+
+
+ambulanceGpsButton.addEventListener('click', function() {
+
+    const status = document.getElementById(
+        'ambulance-location-status'
+    );
+
+    if (!navigator.geolocation) {
+
+        status.textContent =
+            'GPS is not supported by this browser.';
+
+        return;
+    }
+
+    status.textContent =
+        'Getting ambulance GPS location...';
+
+    ambulanceGpsButton.disabled = true;
+
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position) {
+
+            const latitude =
+                position.coords.latitude;
+
+            const longitude =
+                position.coords.longitude;
+
+
+            document.getElementById(
+                'ambulance_latitude'
+            ).value = latitude;
+
+            document.getElementById(
+                'ambulance_longitude'
+            ).value = longitude;
+
+
+            const ambulanceLocationInput =
+                document.getElementById('ambulance_location');
+
+
+            if (!ambulanceLocationInput.value.trim()) {
+
+                ambulanceLocationInput.value =
+                    'GPS Coordinates: ' +
+                    latitude.toFixed(6) +
+                    ', ' +
+                    longitude.toFixed(6);
+
+            }
+
+
+            status.textContent =
+                'GPS captured successfully! Latitude: ' +
+                latitude.toFixed(6) +
+                ', Longitude: ' +
+                longitude.toFixed(6);
+
+
+            ambulanceGpsButton.disabled = false;
+
+        },
+
+
+        function(error) {
+
+            status.textContent =
+                'GPS unavailable. Allow browser location permission and try again.';
+
+            ambulanceGpsButton.disabled = false;
+
+        },
+
+
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+
+    );
+
+});
+
+
+// ======================================
+// NEAREST AMBULANCE MATCHING
+// ======================================
+
+async function findNearestAmbulance(emergencyId, resultId) {
+
+    const result = document.getElementById(resultId);
+
+    result.replaceChildren();
+
+    result.textContent =
+        'Finding nearest available ambulance...';
+
+    try {
+
+        const response = await fetch(
+            '/nearest-ambulance/' +
+            encodeURIComponent(emergencyId)
+        );
+
+        const data = await response.json();
+
+
+        if (!response.ok || !data.success) {
+
+            result.textContent =
+                data.message || 'No matching ambulance found.';
+
+            return;
+        }
+
+
+        // Check whether an ambulance is already assigned
+        if (data.already_assigned) {
+
+            result.textContent =
+                data.message;
+
+            if (data.assigned_ambulance) {
+
+                const assignedInfo =
+                    document.createElement('p');
+
+                assignedInfo.textContent =
+                    '🚑 ' +
+                    data.assigned_ambulance.vehicle_number +
+                    ' | Driver: ' +
+                    data.assigned_ambulance.driver_name;
+
+                result.appendChild(assignedInfo);
+
+            }
+
+            return;
+        }
+
+
+        const ambulance = data.nearest_ambulance;
+
+
+        // Ambulance details
+        const details =
+            document.createElement('div');
+
+        details.className =
+            'assignment-details';
+
+
+        const title =
+            document.createElement('p');
+
+        title.textContent =
+            '🚑 Nearest Available Ambulance';
+
+        details.appendChild(title);
+
+
+        const vehicle =
+            document.createElement('p');
+
+        vehicle.textContent =
+            'Vehicle: ' + ambulance.vehicle_number;
+
+        details.appendChild(vehicle);
+
+
+        const driver =
+            document.createElement('p');
+
+        driver.textContent =
+            'Driver: ' + ambulance.driver_name;
+
+        details.appendChild(driver);
+
+
+        const type =
+            document.createElement('p');
+
+        type.textContent =
+            'Type: ' + ambulance.ambulance_type;
+
+        details.appendChild(type);
+
+
+        const distance =
+            document.createElement('p');
+
+        distance.textContent =
+            'Distance: ' + ambulance.distance_km +
+            ' km (straight-line estimate)';
+
+        details.appendChild(distance);
+
+
+        // Assignment form
+        const assignForm =
+            document.createElement('form');
+
+        assignForm.method = 'POST';
+
+        assignForm.action =
+            '/assign-ambulance/' +
+            encodeURIComponent(emergencyId) +
+            '/' +
+            encodeURIComponent(ambulance.ambulance_id);
+
+
+        const assignButton =
+            document.createElement('button');
+
+        assignButton.type = 'submit';
+
+        assignButton.className =
+            'assign-button';
+
+        assignButton.textContent =
+            '✓ Assign Ambulance';
+
+
+        assignForm.addEventListener('submit', function(event) {
+
+            const confirmed = confirm(
+                'Assign ambulance ' +
+                ambulance.vehicle_number +
+                ' to emergency ' +
+                emergencyId +
+                '?'
+            );
+
+            if (!confirmed) {
+                event.preventDefault();
+                return;
+            }
+
+            assignButton.disabled = true;
+
+            assignButton.textContent =
+                'Assigning...';
+
+        });
+
+
+        assignForm.appendChild(assignButton);
+
+        details.appendChild(assignForm);
+
+        result.replaceChildren(details);
+
+
+    } catch (error) {
+
+        result.textContent =
+            'Unable to connect to server. Please retry.';
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
